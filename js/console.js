@@ -36,6 +36,14 @@ function updateArcadeConsoleUI() {
         // Attract / Not playing mode: show the teaser ticker tape
         if (tickerElem) { tickerElem.style.display = 'block'; }
         if (levelStaticElem) { levelStaticElem.style.display = 'none'; }
+        if (typeof app !== 'undefined' && app && typeof app.getStartingLevel === 'function') {
+            let startLvl = app.getStartingLevel();
+            let tickerText = document.querySelector('.arcade-ticker-text');
+            if (tickerText && startLvl > 1) {
+                let lvlStr = (startLvl < 10 ? '0' : '') + startLvl;
+                tickerText.textContent = '★ DEBUG OVERRIDE: STARTING AT LEVEL ' + lvlStr + ' ★ INSERT COIN TO PLAY ★';
+            }
+        }
     }
 
     // When 0 credits, pulse/throb the red glow on the 25¢ coin button
@@ -87,8 +95,9 @@ function onePlayer() {
     updateArcadeConsoleUI();
     app.mode = MODE_NEW_GAME_1_PLAYER;
     app.players = [];
+    let startLvl = (app && typeof app.getStartingLevel === 'function') ? app.getStartingLevel() : 1;
     let p = new Player(1, 1);
-    p.newGame();
+    p.newGame(startLvl);
     app.players.push(p);
     app.newGame();
     app.mode = MODE_NEW_GAME_1_PLAYER;
@@ -117,10 +126,11 @@ function twoPlayers() {
     updateArcadeConsoleUI();
     app.mode = MODE_NEW_GAME_2_PLAYERS;
     app.players = [];
+    let startLvl = (app && typeof app.getStartingLevel === 'function') ? app.getStartingLevel() : 1;
     let p1 = new Player(1, 1);
     let p2 = new Player(1, 2);
-    p1.newGame();
-    p2.newGame();
+    p1.newGame(startLvl);
+    p2.newGame(startLvl);
     app.players.push(p1);
     app.players.push(p2);
     app.newGame();

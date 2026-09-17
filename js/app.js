@@ -15,7 +15,7 @@ const GAME_PLAYER_WON = 4;  // I don't know about this, not sure how player wins
 const GAME_HOLD_FOR_MESSAGE = 100;
 
 class SpaceInvadersApp {
-    constructor(t_testMode,testdata) {
+    constructor(t_testMode, testdata) {
         this.a1 = null; // invader a image arms down
         this.a2 = null; // invader a image arms up
         this.b1 = null; // invader a image arms down
@@ -62,16 +62,21 @@ class SpaceInvadersApp {
         this.transitionType = 0;
         this.prevBgImage = null;
         this.currBgImage = null;
+        this.isPaused = false;
+        this.bgOpacities = [1.0, 1.0, 1.0, 0.60, 0.7, 1.0, 1.0, 1.0];
+        this.startingLevel = this.parseStartingLevel();
     }
 
     loadImages() {
         this.a1 = loadImage('assets/a1.png');
         this.a2 = loadImage('assets/a2.png');
+        this.a1m = loadImage('assets/a1_magenta.png');
+        this.a2m = loadImage('assets/a2_magenta.png');
         this.b1 = loadImage('assets/b1.png');
         this.b2 = loadImage('assets/b2.png');
         this.c1 = loadImage('assets/c1.png');
         this.c2 = loadImage('assets/c2.png');
-        this.d  = loadImage('assets/d.png');
+        this.d = loadImage('assets/d.png');
         this.bmb1a = loadImage('assets/bmb1a.png');
         this.bmb1b = loadImage('assets/bmb1b.png');
         this.bmb2a = loadImage('assets/bmb2a.png');
@@ -80,7 +85,7 @@ class SpaceInvadersApp {
         this.bmb3a = loadImage('assets/bmb3a.png');
         this.bmb3b = loadImage('assets/bmb3b.png');
         this.bmb3c = loadImage('assets/bmb3c.png');
-        this.explode  = loadImage('assets/explode.png');
+        this.explode = loadImage('assets/explode.png');
         this.cannon = loadImage('assets/lasercannon.png');
         this.cannonShot = loadImage('assets/cannonshot.png');
         this.splashLogo = loadImage('assets/SpaceInvadersLogo.png');
@@ -91,16 +96,19 @@ class SpaceInvadersApp {
             loadImage('assets/bg_moon.jpg'),
             loadImage('assets/bg_nebula.jpg'),
             loadImage('assets/bg_ringed_planet.jpg'),
-            loadImage('assets/bg_mars.jpg'),
+            loadImage('assets/bg_supernova.jpg'),
             loadImage('assets/bg_galaxy.jpg'),
             loadImage('assets/bg_pulsar.jpg'),
-            loadImage('assets/bg_eclipse.jpg')
+            loadImage('assets/bg_eclipse.jpg'),
+            loadImage('assets/bg_singularity.jpg')
         ];
     }
 
     loadAllPixels() {
         this.a1.loadPixels();
         this.a2.loadPixels();
+        this.a1m.loadPixels();
+        this.a2m.loadPixels();
         this.b1.loadPixels();
         this.b2.loadPixels();
         this.c1.loadPixels();
@@ -131,7 +139,7 @@ class SpaceInvadersApp {
     }
 
     nextWave() {
-        this.invaders = new Invaders(this.testMode,this.testdata);
+        this.invaders = new Invaders(this.testMode, this.testdata);
         this.invaders.init();
         this.invaders.speed = 5; // each horizontal move is this many pixels
         this.laserCannon = new LaserCannon();
@@ -247,6 +255,77 @@ class SpaceInvadersApp {
         }
     }
 
+    parseStartingLevel() {
+        if (typeof window === 'undefined') {
+            return 1;
+        }
+        let urlStr = window.location.href || '';
+
+        // 1. Check standard URL search query (?level=7, ?wave=7, ?lvl=7, ?l=7)
+        if (window.location.search) {
+            let params = new URLSearchParams(window.location.search);
+            for (let key of ['level', 'wave', 'lvl', 'l']) {
+                if (params.has(key)) {
+                    let val = parseInt(params.get(key), 10);
+                    if (!isNaN(val) && val >= 1) {
+                        return val;
+                    }
+                }
+            }
+        }
+
+        // 2. Check full URL string for patterns like level=7, wave=7, lvl=7
+        let match = urlStr.match(/(?:level|wave|lvl|l)[=/:]?(\d+)/i);
+        if (match && match[1]) {
+            let val = parseInt(match[1], 10);
+            if (!isNaN(val) && val >= 1) {
+                return val;
+            }
+        }
+
+        // 3. Check hash #7 or #level=7
+        if (window.location.hash) {
+            let hashMatch = window.location.hash.match(/(?:level|wave|lvl|l)?\s*#?=?(\d+)/i);
+            if (hashMatch && hashMatch[1]) {
+                let val = parseInt(hashMatch[1], 10);
+                if (!isNaN(val) && val >= 1) {
+                    return val;
+                }
+            }
+        }
+
+        return 1;
+    }
+
+    getStartingLevel() {
+        return this.parseStartingLevel();
+    }
+
+    getBgOpacity(bgImg) {
+        if (!bgImg || !this.bgImages) {
+            return 1.0;
+        }
+        let idx = this.bgImages.indexOf(bgImg);
+        if (idx !== -1 && this.bgOpacities && this.bgOpacities[idx] !== undefined) {
+            return Math.min(1.0, Math.max(0.1, this.bgOpacities[idx]));
+        }
+        return 1.0;
+    }
+
+    drawBgImage(bgImg, x, y, w, h) {
+        if (!bgImg) {
+            return;
+        }
+        let opacity = this.getBgOpacity(bgImg);
+        if (opacity < 1.0) {
+            tint(255, Math.round(255 * opacity));
+            image(bgImg, x, y, w, h);
+            noTint();
+        } else {
+            image(bgImg, x, y, w, h);
+        }
+    }
+
     renderBackground() {
         if (!this.bgImages || this.bgImages.length === 0) {
             return;
@@ -256,7 +335,7 @@ class SpaceInvadersApp {
 
         if (!this.transitionActive || !this.currBgImage) {
             if (currBg) {
-                image(currBg, 0, 0, width, height);
+                this.drawBgImage(currBg, 0, 0, width, height);
             }
             return;
         }
@@ -268,7 +347,7 @@ class SpaceInvadersApp {
 
         if (progress >= 1) {
             this.transitionActive = false;
-            image(targetBg, 0, 0, width, height);
+            this.drawBgImage(targetBg, 0, 0, width, height);
             return;
         }
 
@@ -283,7 +362,7 @@ class SpaceInvadersApp {
                 let maxR = Math.hypot(width / 2, height / 2);
                 let r = maxR * t;
 
-                if (prevBg) { image(prevBg, 0, 0, width, height); }
+                if (prevBg) { this.drawBgImage(prevBg, 0, 0, width, height); }
                 else { fill(0); rect(0, 0, width, height); }
 
                 push();
@@ -291,7 +370,7 @@ class SpaceInvadersApp {
                 drawingContext.beginPath();
                 drawingContext.arc(width / 2, height / 2, r, 0, Math.PI * 2);
                 drawingContext.clip();
-                image(targetBg, 0, 0, width, height);
+                this.drawBgImage(targetBg, 0, 0, width, height);
                 drawingContext.restore();
 
                 noFill();
@@ -307,13 +386,15 @@ class SpaceInvadersApp {
                 let scaleFactor = lerp(0.06, 1.0, t);
                 let alpha = constrain(progress * 1.5, 0, 1) * 255;
 
-                if (prevBg) { image(prevBg, 0, 0, width, height); }
+                if (prevBg) { this.drawBgImage(prevBg, 0, 0, width, height); }
                 else { fill(0); rect(0, 0, width, height); }
 
                 push();
                 imageMode(CENTER);
-                tint(255, alpha);
+                let targetAlpha = (alpha / 255) * this.getBgOpacity(targetBg) * 255;
+                tint(255, targetAlpha);
                 image(targetBg, width / 2, height / 2, width * scaleFactor, height * scaleFactor);
+                noTint();
 
                 stroke(160, 210, 255, (1 - progress) * 190);
                 strokeWeight(2);
@@ -323,7 +404,7 @@ class SpaceInvadersApp {
                     let r1 = 20 * progress;
                     let r2 = (Math.max(width, height) * 0.75) * progress;
                     line(width / 2 + Math.cos(angle) * r1, height / 2 + Math.sin(angle) * r1,
-                         width / 2 + Math.cos(angle) * r2, height / 2 + Math.sin(angle) * r2);
+                        width / 2 + Math.cos(angle) * r2, height / 2 + Math.sin(angle) * r2);
                 }
                 pop();
                 break;
@@ -333,7 +414,7 @@ class SpaceInvadersApp {
                 let t = easeInOutQuad(progress);
                 let y = height * t;
 
-                if (prevBg) { image(prevBg, 0, 0, width, height); }
+                if (prevBg) { this.drawBgImage(prevBg, 0, 0, width, height); }
                 else { fill(0); rect(0, 0, width, height); }
 
                 push();
@@ -341,7 +422,7 @@ class SpaceInvadersApp {
                 drawingContext.beginPath();
                 drawingContext.rect(0, 0, width, y);
                 drawingContext.clip();
-                image(targetBg, 0, 0, width, height);
+                this.drawBgImage(targetBg, 0, 0, width, height);
                 drawingContext.restore();
 
                 stroke(51, 255, 120, (1 - progress * 0.4) * 255);
@@ -359,7 +440,7 @@ class SpaceInvadersApp {
                 let t = easeInOutCubic(progress);
                 let splitW = (width / 2) * t;
 
-                if (prevBg) { image(prevBg, 0, 0, width, height); }
+                if (prevBg) { this.drawBgImage(prevBg, 0, 0, width, height); }
                 else { fill(0); rect(0, 0, width, height); }
 
                 push();
@@ -367,7 +448,7 @@ class SpaceInvadersApp {
                 drawingContext.beginPath();
                 drawingContext.rect(width / 2 - splitW, 0, splitW * 2, height);
                 drawingContext.clip();
-                image(targetBg, 0, 0, width, height);
+                this.drawBgImage(targetBg, 0, 0, width, height);
                 drawingContext.restore();
 
                 stroke(255, 140, 50, (1 - progress) * 255);
@@ -382,7 +463,7 @@ class SpaceInvadersApp {
                 let t = easeInOutQuad(progress);
                 let angle = -HALF_PI + TWO_PI * t;
 
-                if (prevBg) { image(prevBg, 0, 0, width, height); }
+                if (prevBg) { this.drawBgImage(prevBg, 0, 0, width, height); }
                 else { fill(0); rect(0, 0, width, height); }
 
                 push();
@@ -392,7 +473,7 @@ class SpaceInvadersApp {
                 drawingContext.arc(width / 2, height / 2, Math.hypot(width, height), -HALF_PI, angle);
                 drawingContext.closePath();
                 drawingContext.clip();
-                image(targetBg, 0, 0, width, height);
+                this.drawBgImage(targetBg, 0, 0, width, height);
                 drawingContext.restore();
 
                 let r = Math.hypot(width / 2, height / 2);
@@ -406,13 +487,13 @@ class SpaceInvadersApp {
                 // Supernova Solar Flare Flash
                 if (progress < 0.35) {
                     let pIn = progress / 0.35;
-                    if (prevBg) { image(prevBg, 0, 0, width, height); }
+                    if (prevBg) { this.drawBgImage(prevBg, 0, 0, width, height); }
                     noStroke();
                     fill(255, 245, 220, pIn * 240);
                     rect(0, 0, width, height);
                 } else {
                     let pOut = (progress - 0.35) / 0.65;
-                    image(targetBg, 0, 0, width, height);
+                    this.drawBgImage(targetBg, 0, 0, width, height);
                     noStroke();
                     fill(255, 245, 220, (1 - pOut) * 240);
                     rect(0, 0, width, height);
@@ -420,7 +501,7 @@ class SpaceInvadersApp {
                 break;
             }
             default: {
-                image(targetBg, 0, 0, width, height);
+                this.drawBgImage(targetBg, 0, 0, width, height);
                 break;
             }
         }
@@ -496,7 +577,7 @@ class SpaceInvadersApp {
         this.invaders.mystery.cancel();  // cancel any mystery ship timeouts
     }
 
-    messageUserThenContinue(nowState,thenState,nextPlayer) {
+    messageUserThenContinue(nowState, thenState, nextPlayer) {
         if (this.msgTmr != null) {
             console.log("*** ERR:  msgTimer was not null in app.js");
             clearTimeout(this.msgTmr);
@@ -547,7 +628,7 @@ class SpaceInvadersApp {
                     updateArcadeConsoleUI();
                 }
                 app.gameStatus = GAME_HOLD_FOR_MESSAGE + GAME_PLAYER_DEFEATED_WAVE;
-                this.messageUserThenContinue(MODE_HOLD_SCREEN_MSG,MODE_NEXT_WAVE);
+                this.messageUserThenContinue(MODE_HOLD_SCREEN_MSG, MODE_NEXT_WAVE);
                 break;
             case GAME_PLAYER_LOST_WAVE:
                 app.gameStatus = GAME_HOLD_FOR_MESSAGE + GAME_PLAYER_LOST_WAVE;
@@ -561,15 +642,15 @@ class SpaceInvadersApp {
                 let nextPlayer = this.nextTurnPlayer();
                 if (nextPlayer >= 0) {
                     this.resumeSameWave = true;
-                    this.messageUserThenContinue(MODE_HOLD_SCREEN_MSG,MODE_NEXT_WAVE,nextPlayer);
+                    this.messageUserThenContinue(MODE_HOLD_SCREEN_MSG, MODE_NEXT_WAVE, nextPlayer);
                 } else {
                     this.gameOver = true;
-                    this.messageUserThenContinue(MODE_HOLD_SCREEN_MSG,MODE_NOT_PLAYING);
+                    this.messageUserThenContinue(MODE_HOLD_SCREEN_MSG, MODE_NOT_PLAYING);
                 }
                 break;
             case GAME_PLAYER_LOST:
                 this.gameOver = true;
-                this.messageUserThenContinue(MODE_HOLD_SCREEN_MSG,MODE_NOT_PLAYING);
+                this.messageUserThenContinue(MODE_HOLD_SCREEN_MSG, MODE_NOT_PLAYING);
                 break;
             case GAME_PLAYER_WON:
                 console.log("what do we do now?  I don't know what it means to win!");

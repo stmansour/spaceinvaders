@@ -90,6 +90,18 @@ function draw() {
         case MODE_HOLD_SCREEN_MSG:
         case MODE_NEXT_WAVE:
             app.renderBackground();
+            if (app.bunkers) { app.bunkers.show(); }
+            app.shots.show();
+            app.invaders.show();
+            if (app.invaders.introduced) {
+                app.laserCannon.show();
+            }
+
+            if (app.isPaused) {
+                app.screen.show();
+                return;
+            }
+
             app.setSpeed();
             if (app.sound && app.invaders.introduced && !app.gameHasStopped()) {
                 app.sound.updateInvaderMarch(
@@ -97,14 +109,10 @@ function draw() {
                     app.invaders.shipsPerSquadron * app.invaders.squadrons.length
                 );
             }
-            if (app.bunkers) { app.bunkers.show(); }
-            app.shots.show();
             app.shots.scanForHits();
-            app.invaders.show();
             app.invaders.scanForHits();
             if (app.invaders.introduced) {
                 app.laserCannon.go(); // move before show
-                app.laserCannon.show();
             }
             break;
         default:
@@ -116,6 +124,10 @@ function draw() {
 }
 
 function keyPressed() {
+    if (app && app.isPaused) {
+        return false;
+    }
+
     if (app.mode == MODE_SPLASH) {
         app.finishSplash();
         return false;
@@ -163,6 +175,10 @@ function keyPressed() {
 }
 
 function keyReleased() {
+    if (app && app.isPaused) {
+        return false;
+    }
+
     if (!app.laserCannon) {
         return;
     }
@@ -187,3 +203,106 @@ function mousePressed() {
         app.finishSplash();
     }
 }
+
+function isGameActive() {
+    return app && !app.gameOver && (
+        app.mode === MODE_NEW_GAME_1_PLAYER ||
+        app.mode === MODE_NEW_GAME_2_PLAYERS ||
+        app.mode === MODE_HOLD_SCREEN_MSG ||
+        app.mode === MODE_NEXT_WAVE
+    );
+}
+
+function toggleArcadeGuide() {
+    let drawer = document.getElementById('arcade-guide-drawer');
+    if (!drawer) {
+        return;
+    }
+    let isOpen = drawer.classList.contains('open');
+    if (isOpen || (app && app.isPaused)) {
+        closeArcadeGuide();
+    } else {
+        openArcadeGuide();
+    }
+}
+
+function openArcadeGuide() {
+    let drawer = document.getElementById('arcade-guide-drawer');
+    let backdrop = document.getElementById('drawer-backdrop');
+    let pauseOverlay = document.getElementById('game-pause-overlay');
+    let canvasWrap = document.getElementById('theCanvas');
+
+    if (drawer) {
+        drawer.classList.add('open');
+    }
+    if (backdrop) {
+        backdrop.classList.add('active');
+    }
+
+    if (isGameActive()) {
+        app.isPaused = true;
+        if (canvasWrap) {
+            canvasWrap.classList.add('paused-blur');
+        }
+        if (pauseOverlay) {
+            pauseOverlay.classList.add('active');
+        }
+        if (app.sound) {
+            app.sound.mysteryStop();
+        }
+        if (app.laserCannon) {
+            app.laserCannon.goLeft(false);
+            app.laserCannon.goRight(false);
+        }
+        if (app.invaders && app.invaders.mystery) {
+            app.invaders.mystery.pause();
+        }
+    }
+}
+
+function closeArcadeGuide() {
+    let drawer = document.getElementById('arcade-guide-drawer');
+    let backdrop = document.getElementById('drawer-backdrop');
+    let pauseOverlay = document.getElementById('game-pause-overlay');
+    let canvasWrap = document.getElementById('theCanvas');
+
+    if (drawer) {
+        drawer.classList.remove('open');
+    }
+    if (backdrop) {
+        backdrop.classList.remove('active');
+    }
+    if (canvasWrap) {
+        canvasWrap.classList.remove('paused-blur');
+    }
+    if (pauseOverlay) {
+        pauseOverlay.classList.remove('active');
+    }
+
+    if (app && app.isPaused) {
+        app.isPaused = false;
+        if (app.invaders && app.invaders.mystery) {
+            app.invaders.mystery.resume();
+        }
+    }
+}
+
+window.addEventListener('keydown', function (e) {
+    if (e.key === 'Tab' || e.code === 'Tab') {
+        e.preventDefault();
+        toggleArcadeGuide();
+        return false;
+    }
+    if ((e.key === 'h' || e.key === 'H') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        toggleArcadeGuide();
+        return false;
+    }
+    if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey && !e.altKey && isGameActive()) {
+        toggleArcadeGuide();
+        return false;
+    }
+    if (e.key === 'Escape') {
+        closeArcadeGuide();
+        return false;
+    }
+});

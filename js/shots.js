@@ -18,9 +18,11 @@ class Shots {
         }
         for (let i = this.shots.length - 1; i >= 0; i--) {
             this.shots[i].show();
-            this.shots[i].move();
-            if (this.shots[i].expired) {
-                this.shots.splice(i, 1);
+            if (!app.isPaused) {
+                this.shots[i].move();
+                if (this.shots[i].expired) {
+                    this.shots.splice(i, 1);
+                }
             }
         }
         for (let i = 0; i < this.explosions.length; i++) {

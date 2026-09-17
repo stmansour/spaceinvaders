@@ -15,12 +15,13 @@ class Player {
         this.bonusLifeSlot = -1;
     }
 
-    newGame() {
+    newGame(startingLevel) {
         this.score = 0;
         this.lives = 3;
-        this.wavesCompleted = 0;
-        this.waveTop = 100;
-        this.bombDropOdds = 4000;
+        let startLvl = (typeof startingLevel === 'number' && startingLevel >= 1) ? startingLevel : 1;
+        this.wavesCompleted = startLvl - 1;
+        this.waveTop = Math.min(260, 100 + (this.wavesCompleted * 20));
+        this.bombDropOdds = Math.max(500, 4000 - (this.wavesCompleted * 500));
         this.invaders = null;
         this.bonusAwarded = false;
         this.bonusLifeTime = 0;

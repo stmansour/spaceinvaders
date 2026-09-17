@@ -275,17 +275,17 @@ class SIScreen {
 
     score1() {
         let player = null;
-        let name = "SCORE<1>";
+        let name = "1UP";
         let score = 0;
         if (app.players.length > 0) {
             player = app.players[0];
-            name = "SCORE" + player.name;
             score = player.score;
         }
         noStroke();
         textSize(app.cSize);
-        fill(255);
+        fill(0, 229, 255); // Arcade Cyan matching splash screen
         text(name, 145, 25);
+        fill(255);
         let s = zeroFillNumber(score, 4);
         text(s, 145, app.topBar);
 
@@ -302,18 +302,18 @@ class SIScreen {
         if (app.players.length == 1) {
             return;
         }
-        let name = "SCORE<2>";
+        let name = "2UP";
         let score = 0;
         let player = null;
         if (app.players.length > 1) {
             player = app.players[1];
-            name = "SCORE" + player.name;
             score = player.score;
         }
         noStroke();
         textSize(app.cSize);
-        fill(255);
+        fill(0, 229, 255); // Arcade Cyan matching splash screen
         text(name, width - textWidth(name) - 145, 25);
+        fill(255);
         let s = zeroFillNumber(score, 4);
         text(s, width - textWidth(s) - 145, app.topBar);
 
@@ -330,8 +330,9 @@ class SIScreen {
         var s = "HI-SCORE";
         noStroke();
         textSize(app.cSize);
-        fill(255);
+        fill(255, 38, 38); // Arcade Red matching splash screen
         text(s, (width - textWidth(s)) / 2, 25);
+        fill(255);
         s = zeroFillNumber(app.highScore, 4);
         text(s, (width - textWidth(s)) / 2, app.topBar);
     }

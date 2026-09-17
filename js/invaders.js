@@ -31,7 +31,7 @@ class Invaders {
         let y = app.players[app.currentPlayer].waveTop;
         this.squadbuilder([app.b1, app.b2], y + 4 * y1, 10);
         this.squadbuilder([app.b1, app.b2], y + 3 * y1, 10);
-        this.squadbuilder([app.a1, app.a2], y + 2 * y1, 20);
+        this.squadbuilder([app.a1m, app.a2m], y + 2 * y1, 20);
         this.squadbuilder([app.a1, app.a2], y + y1, 20);
         this.squadbuilder([app.c1, app.c2], y, 30);
         this.mystery = new MysteryShip();
@@ -57,7 +57,7 @@ class Invaders {
     };
 
     show() {
-        if (app.gameHasStopped() || app.mode == MODE_HOLD_SCREEN_MSG) {
+        if (app.gameHasStopped() || app.mode == MODE_HOLD_SCREEN_MSG || app.isPaused) {
             if (app.clearScreenForMessages()) {
                 return;
             }
@@ -115,7 +115,7 @@ class Invaders {
         if (passComplete && !this.introduced) {
             this.introduced = true;
             this.mystery.go();
-        } else if (this.introduced && !this.mystery.moving && this.mystery.timer == null && !app.gameHasStopped() && app.mode != MODE_HOLD_SCREEN_MSG) {
+        } else if (this.introduced && !this.mystery.moving && this.mystery.timer == null && !app.gameHasStopped() && app.mode != MODE_HOLD_SCREEN_MSG && !app.isPaused) {
             this.mystery.go();
         }
 

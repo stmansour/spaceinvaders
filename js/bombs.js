@@ -19,9 +19,11 @@ class Bombs {
         }
         for (let i = this.bombs.length - 1; i >= 0; i--) {
             this.bombs[i].show();
-            this.bombs[i].move();
-            if (this.bombs[i].expired) {
-                this.bombs.splice(i, 1);
+            if (!app.isPaused) {
+                this.bombs[i].move();
+                if (this.bombs[i].expired) {
+                    this.bombs.splice(i, 1);
+                }
             }
         }
         if (this.hitx != 0 && this.hity != 0) {

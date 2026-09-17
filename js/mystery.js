@@ -3,6 +3,7 @@
 class MysteryShip {
     constructor() {
         this.timer = null;
+        this.timerPaused = false;
         this.points = 0;
         this.img = app.d;
         this.x = 0;
@@ -13,8 +14,20 @@ class MysteryShip {
     }
 
     go() {
+        if (app && app.isPaused) {
+            this.timerPaused = true;
+            return;
+        }
+        if (this.timer != null) {
+            clearTimeout(this.timer);
+            this.timer = null;
+        }
         this.timer = setTimeout( () => {
             this.timer = null;
+            if (app && app.isPaused) {
+                this.timerPaused = true;
+                return;
+            }
             if ( floor(random(0,1) + 0.5) > 0) {
                 this.dir = -1;
                 this.dx = -3;
@@ -30,6 +43,28 @@ class MysteryShip {
         } , random(5000,15000));  // between 10 and 30 sec
     }
 
+    pause() {
+        if (this.timer != null) {
+            clearTimeout(this.timer);
+            this.timer = null;
+            this.timerPaused = true;
+        }
+        if (this.moving && app.sound) {
+            app.sound.mysteryStop();
+        }
+    }
+
+    resume() {
+        if (this.moving) {
+            if (app.sound) {
+                app.sound.mysteryStart();
+            }
+        } else if (this.timerPaused || this.timer == null) {
+            this.timerPaused = false;
+            this.go();
+        }
+    }
+
     cancel() {
         if (this.timer != null) {
             clearTimeout(this.timer);
@@ -37,10 +72,15 @@ class MysteryShip {
         if (app.sound) { app.sound.mysteryStop(); }
         this.moving = false;
         this.timer = null;
+        this.timerPaused = false;
     }
 
     show() {
         if (!this.moving) {
+            return;
+        }
+        if (app && app.isPaused) {
+            image(this.img, this.x, this.y);
             return;
         }
         // check to see if we made it safely across the screen
@@ -56,7 +96,7 @@ class MysteryShip {
     }
 
     hit(x1,y1,x2,y2) {
-        if (!this.moving) {
+        if (!this.moving || (app && app.isPaused)) {
             return false;
         }
         let sx1 = this.x;
