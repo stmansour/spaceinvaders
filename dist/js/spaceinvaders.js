@@ -1346,6 +1346,10 @@ class Shots {
     score(pts) {
         let player = app.players[app.currentPlayer];
         player.score += pts;
+        let currentLvl = (player.wavesCompleted || 0) + 1;
+        if (typeof app.checkHighScore === 'function') {
+            app.checkHighScore(player.score, currentLvl);
+        }
 
         // One-time bonus life awarded at BONUS_LIFE_SCORE points
         let bonusThreshold = (typeof BONUS_LIFE_SCORE !== 'undefined') ? BONUS_LIFE_SCORE : 5000;
@@ -1397,7 +1401,7 @@ class Player {
         this.lives = 3;
         let startLvl = (typeof startingLevel === 'number' && startingLevel >= 1) ? startingLevel : 1;
         this.wavesCompleted = startLvl - 1;
-        this.waveTop = Math.min(260, 100 + (this.wavesCompleted * 20));
+        this.waveTop = Math.min(240, 100 + (this.wavesCompleted * 20));
         this.bombDropOdds = Math.max(500, 4000 - (this.wavesCompleted * 500));
         this.invaders = null;
         this.bonusAwarded = false;
@@ -1526,9 +1530,16 @@ function updateArcadeConsoleUI() {
         if (typeof app !== 'undefined' && app && typeof app.getStartingLevel === 'function') {
             let startLvl = app.getStartingLevel();
             let tickerText = document.querySelector('.arcade-ticker-text');
-            if (tickerText && startLvl > 1) {
-                let lvlStr = (startLvl < 10 ? '0' : '') + startLvl;
-                tickerText.textContent = '★ DEBUG OVERRIDE: STARTING AT LEVEL ' + lvlStr + ' ★ INSERT COIN TO PLAY ★';
+            if (tickerText) {
+                if (app.scoresResetViaUrl && startLvl > 1) {
+                    let lvlStr = (startLvl < 10 ? '0' : '') + startLvl;
+                    tickerText.textContent = '★ HIGH SCORES RESET ★ STARTING AT LEVEL ' + lvlStr + ' ★ INSERT COIN TO PLAY ★';
+                } else if (app.scoresResetViaUrl) {
+                    tickerText.textContent = '★ HIGH SCORES RESET (DEBUG) ★ INSERT COIN TO PLAY ★';
+                } else if (startLvl > 1) {
+                    let lvlStr = (startLvl < 10 ? '0' : '') + startLvl;
+                    tickerText.textContent = '★ DEBUG OVERRIDE: STARTING AT LEVEL ' + lvlStr + ' ★ INSERT COIN TO PLAY ★';
+                }
             }
         }
     }
@@ -1556,6 +1567,22 @@ function updateArcadeConsoleUI() {
         } else {
             btn2.classList.remove('ready');
         }
+    }
+
+    // Sync high score record in Arcade Guide drawer if available
+    let drawerHiScore = document.getElementById('drawer-hi-score');
+    let drawerHiLevel = document.getElementById('drawer-hi-level');
+    if (drawerHiScore && typeof app !== 'undefined' && app) {
+        let hi = (typeof app.highScore !== 'undefined') ? app.highScore : ((typeof app.hiScore !== 'undefined') ? app.hiScore : 0);
+        let scoreStr = '' + hi;
+        while (scoreStr.length < 5) {
+            scoreStr = '0' + scoreStr;
+        }
+        drawerHiScore.textContent = scoreStr;
+    }
+    if (drawerHiLevel && typeof app !== 'undefined' && app) {
+        let lvl = (typeof app.highScoreLevel !== 'undefined') ? app.highScoreLevel : ((typeof app.hiScoreLevel !== 'undefined') ? app.hiScoreLevel : 1);
+        drawerHiLevel.textContent = 'LEVEL ' + (lvl < 10 ? '0' : '') + lvl;
     }
 }
 
@@ -2158,6 +2185,8 @@ class SpaceInvadersApp {
         this.players = []; // array of player objects.
         this.currentPlayer = 0; // during play, this can be 0 or 1
         this.highScore = 0;
+        this.highScoreLevel = 1;
+        this.loadHighScore();
         this.credits = 0;
         this.cSize = 14; // size of large characters
         this.font = null;
@@ -2181,7 +2210,7 @@ class SpaceInvadersApp {
         this.prevBgImage = null;
         this.currBgImage = null;
         this.isPaused = false;
-        this.bgOpacities = [1.0, 1.0, 1.0, 0.60, 1.0, 1.0, 1.0, 1.0];
+        this.bgOpacities = [1.0, 1.0, 1.0, 0.60, 0.70, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
         this.startingLevel = this.parseStartingLevel();
     }
 
@@ -2218,7 +2247,10 @@ class SpaceInvadersApp {
             loadImage('assets/bg_galaxy.jpg'),
             loadImage('assets/bg_pulsar.jpg'),
             loadImage('assets/bg_eclipse.jpg'),
-            loadImage('assets/bg_singularity.jpg')
+            loadImage('assets/bg_singularity.jpg'),
+            loadImage('assets/bg_quasar.jpg'),
+            loadImage('assets/bg_hypernova.jpg'),
+            loadImage('assets/bg_cosmic_web.jpg')
         ];
     }
 
@@ -2343,8 +2375,13 @@ class SpaceInvadersApp {
         if (this.players && this.players.length > 0 && this.players[this.currentPlayer]) {
             wave = this.players[this.currentPlayer].wavesCompleted || 0;
         }
-        // If holding a wave completed message, stay on the wave that was just won
-        if (this.mode === MODE_HOLD_SCREEN_MSG && wave > 0) {
+        // Only if holding a wave completed (victory) message, stay on the wave that was just won
+        // because wavesCompleted was already incremented for the upcoming wave.
+        // When a life/cannon is lost, wavesCompleted is NOT incremented, so keep the current wave image.
+        let isWaveDefeatedMsg = (this.mode === MODE_HOLD_SCREEN_MSG &&
+            (this.gameStatus === GAME_HOLD_FOR_MESSAGE + GAME_PLAYER_DEFEATED_WAVE ||
+             this.gameStatus === GAME_PLAYER_DEFEATED_WAVE));
+        if (isWaveDefeatedMsg && wave > 0) {
             wave = wave - 1;
         }
         return this.bgImages[wave % this.bgImages.length];
@@ -2417,6 +2454,77 @@ class SpaceInvadersApp {
 
     getStartingLevel() {
         return this.parseStartingLevel();
+    }
+
+    checkHighScore(score, level) {
+        if (score > this.highScore) {
+            this.highScore = score;
+            this.highScoreLevel = (typeof level === 'number' && level >= 1) ? level : 1;
+            this.saveHighScore();
+            if (typeof updateArcadeConsoleUI === 'function') {
+                updateArcadeConsoleUI();
+            }
+        }
+    }
+
+    saveHighScore() {
+        if (typeof localStorage !== 'undefined') {
+            try {
+                localStorage.setItem('spaceinvaders_highscore', String(this.highScore));
+                localStorage.setItem('spaceinvaders_highscore_level', String(this.highScoreLevel));
+            } catch (e) {
+                // Ignore
+            }
+        }
+    }
+
+    loadHighScore() {
+        this.scoresResetViaUrl = false;
+        // Check for URL parameter to reset high scores (e.g. ?resetscores, &resetscores, ?level=7&resetscores)
+        if (typeof window !== 'undefined') {
+            let urlStr = window.location.href || '';
+            let search = window.location.search || '';
+            let params = new URLSearchParams(search);
+            if (params.has('resetscores') || params.has('resetscore') || /[?&#]resetscores?(?:[=&#]|$)/i.test(urlStr)) {
+                this.resetHighScore();
+                return;
+            }
+        }
+
+        if (typeof localStorage !== 'undefined') {
+            try {
+                let s = localStorage.getItem('spaceinvaders_highscore');
+                let l = localStorage.getItem('spaceinvaders_highscore_level');
+                if (s !== null) {
+                    let parsedScore = parseInt(s, 10);
+                    if (!isNaN(parsedScore)) this.highScore = parsedScore;
+                }
+                if (l !== null) {
+                    let parsedLevel = parseInt(l, 10);
+                    if (!isNaN(parsedLevel)) this.highScoreLevel = parsedLevel;
+                }
+            } catch (e) {
+                // Ignore
+            }
+        }
+    }
+
+    resetHighScore() {
+        this.highScore = 0;
+        this.highScoreLevel = 1;
+        this.scoresResetViaUrl = true;
+        if (typeof localStorage !== 'undefined') {
+            try {
+                localStorage.removeItem('spaceinvaders_highscore');
+                localStorage.removeItem('spaceinvaders_highscore_level');
+            } catch (e) {
+                // Ignore
+            }
+        }
+        console.log('[Space Invaders] High scores reset via URL parameter (resetscores).');
+        if (typeof updateArcadeConsoleUI === 'function') {
+            updateArcadeConsoleUI();
+        }
     }
 
     getBgOpacity(bgImg) {
@@ -2660,6 +2768,9 @@ class SpaceInvadersApp {
     // only once upon winning a game.
     winTasks() {
         this.players[this.currentPlayer].waveTop += 20; // next wave moves closer
+        if (this.players[this.currentPlayer].waveTop > 240) {
+            this.players[this.currentPlayer].waveTop = 240; // cap at maximum lethal altitude
+        }
         this.players[this.currentPlayer].bombDropOdds -= 500;
         if (this.players[this.currentPlayer].bombDropOdds < 500) {
             this.players[this.currentPlayer].bombDropOdds = 500;
@@ -2728,9 +2839,8 @@ class SpaceInvadersApp {
         //-----------------------------
         app.invaders.mystery.cancel();
         let player = this.players[this.currentPlayer];
-        if (player.score > this.highScore) {
-            this.highScore = player.score;
-        }
+        let currentLvl = (player.wavesCompleted || 0) + 1;
+        this.checkHighScore(player.score, currentLvl);
 
         //--------------------------------------
         // update based on status...

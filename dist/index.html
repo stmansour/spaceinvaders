@@ -5,8 +5,8 @@
     <meta charset="utf-8">
     <title>Space Invaders Arcade</title>
     <link rel="icon" type="image/png" href="assets/a1.png">
-    <link rel="stylesheet" type="text/css" href="css/spaceinvaders.css?v=1.0.0-20260917T045756">
-    <script src="js/spaceinvaders.js?v=1.0.0-20260917T045756"></script>
+    <link rel="stylesheet" type="text/css" href="css/spaceinvaders.css?v=1.0.0-20260918T044320">
+    <script src="js/spaceinvaders.js?v=1.0.0-20260918T044320"></script>
 </head>
 
 <body>
@@ -46,7 +46,7 @@
                     </button>
                     <div class="level-counter credit-counter">
                         <div id="arcade-ticker" class="arcade-ticker-wrap">
-                            <span class="arcade-ticker-text">WHAT LEVEL WILL YOU ACHIEVE? ★ CAN YOU SURVIVE TO LEVEL 8: MASTER LEVEL? ★</span>
+                            <span class="arcade-ticker-text">WHAT LEVEL WILL YOU ACHIEVE? ★ CAN YOU SURVIVE TO LEVEL 11: GRANDMASTER LEVEL? ★</span>
                         </div>
                         <span id="arcade-level-static" style="display: none;">LEVEL <span
                                 id="arcade-level-count">01</span></span>
@@ -90,6 +90,25 @@
         </div>
 
         <div class="drawer-content">
+            <!-- All-Time High Score & Hall of Fame -->
+            <section class="drawer-card">
+                <div class="card-header-flex">
+                    <h3 class="card-title">ALL-TIME HIGH SCORE &amp; RECORD</h3>
+                    <span class="hall-badge">RECORD HOLDER</span>
+                </div>
+                <div class="high-score-record-box">
+                    <div class="record-stat-group">
+                        <span class="record-label">ALL-TIME HI-SCORE</span>
+                        <span id="drawer-hi-score" class="record-value color-gold">0000</span>
+                    </div>
+                    <div class="record-divider"></div>
+                    <div class="record-stat-group">
+                        <span class="record-label">HIGHEST LEVEL ACHIEVED</span>
+                        <span id="drawer-hi-level" class="record-value color-cyan">LEVEL 01</span>
+                    </div>
+                </div>
+            </section>
+
             <!-- Tactical Controls Card -->
             <section class="drawer-card">
                 <h3 class="card-title">TACTICAL COMMANDS &amp; CONTROLS</h3>
@@ -278,8 +297,8 @@
 
             <!-- Cosmic Battlegrounds & Master Level Guide -->
             <section class="drawer-card">
-                <h3 class="card-title">COSMIC BATTLEGROUNDS (LEVELS 1 &ndash; 8)</h3>
-                <p class="level-lead-text">Each wave takes place across a unique planetary theater. Invaders drop lower and advance with increasing ferocity:</p>
+                <h3 class="card-title">COSMIC BATTLEGROUNDS (LEVELS 1 &ndash; 11)</h3>
+                <p class="level-lead-text">Each wave takes place across a unique planetary theater. Invaders drop lower and advance with increasing ferocity (altitude caps at Level 8 lethal clearance):</p>
                 <div class="levels-grid">
                     <div class="level-item">
                         <span class="level-num">01</span>
@@ -331,11 +350,33 @@
                         </div>
                     </div>
                     <div class="level-item level-master-card">
-                        <div class="level-master-badge">&#9733; LEVEL 08: MASTER LEVEL &#9733;</div>
+                        <div class="level-master-badge">&#9733; LEVEL 08: MASTER TIER &#9733;</div>
                         <div class="level-info">
                             <span class="level-name color-gold">Cosmic Singularity</span>
-                            <span class="level-tag color-gold">Event Horizon &bull; Maximum Aggression &bull; <code class="bg-file-code">bg_singularity.jpg</code></span>
+                            <span class="level-tag color-gold">Event Horizon &bull; Lethal Baseline Altitude &bull; <code class="bg-file-code">bg_singularity.jpg</code></span>
                             <p class="master-note">"If anybody ever gets to that level then they are a true master." Formation descends at lethal altitude with relentless targeted bombardment.</p>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <span class="level-num">09</span>
+                        <div class="level-info">
+                            <span class="level-name">Quasar Core</span>
+                            <span class="level-tag">Relativistic Plasma Jets &bull; <code class="bg-file-code">bg_quasar.jpg</code></span>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <span class="level-num">10</span>
+                        <div class="level-info">
+                            <span class="level-name">Hypernova Remnant</span>
+                            <span class="level-tag">Concentric Shockwaves &bull; <code class="bg-file-code">bg_hypernova.jpg</code></span>
+                        </div>
+                    </div>
+                    <div class="level-item level-grandmaster-card">
+                        <div class="level-grandmaster-badge">&#9733;&#9733; LEVEL 11: GRANDMASTER TIER &#9733;&#9733;</div>
+                        <div class="level-info">
+                            <span class="level-name color-cyan">The Cosmic Web</span>
+                            <span class="level-tag color-cyan">Bioluminescent Spacetime Filaments &bull; Peak Cadence &bull; <code class="bg-file-code">bg_cosmic_web.jpg</code></span>
+                            <p class="master-note">Ultimate survival test across the universal web of dark matter. Alien bombs deploy at maximum frequency with hyper-accelerated step velocity.</p>
                         </div>
                     </div>
                 </div>

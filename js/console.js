@@ -39,9 +39,16 @@ function updateArcadeConsoleUI() {
         if (typeof app !== 'undefined' && app && typeof app.getStartingLevel === 'function') {
             let startLvl = app.getStartingLevel();
             let tickerText = document.querySelector('.arcade-ticker-text');
-            if (tickerText && startLvl > 1) {
-                let lvlStr = (startLvl < 10 ? '0' : '') + startLvl;
-                tickerText.textContent = '★ DEBUG OVERRIDE: STARTING AT LEVEL ' + lvlStr + ' ★ INSERT COIN TO PLAY ★';
+            if (tickerText) {
+                if (app.scoresResetViaUrl && startLvl > 1) {
+                    let lvlStr = (startLvl < 10 ? '0' : '') + startLvl;
+                    tickerText.textContent = '★ HIGH SCORES RESET ★ STARTING AT LEVEL ' + lvlStr + ' ★ INSERT COIN TO PLAY ★';
+                } else if (app.scoresResetViaUrl) {
+                    tickerText.textContent = '★ HIGH SCORES RESET (DEBUG) ★ INSERT COIN TO PLAY ★';
+                } else if (startLvl > 1) {
+                    let lvlStr = (startLvl < 10 ? '0' : '') + startLvl;
+                    tickerText.textContent = '★ DEBUG OVERRIDE: STARTING AT LEVEL ' + lvlStr + ' ★ INSERT COIN TO PLAY ★';
+                }
             }
         }
     }
@@ -69,6 +76,22 @@ function updateArcadeConsoleUI() {
         } else {
             btn2.classList.remove('ready');
         }
+    }
+
+    // Sync high score record in Arcade Guide drawer if available
+    let drawerHiScore = document.getElementById('drawer-hi-score');
+    let drawerHiLevel = document.getElementById('drawer-hi-level');
+    if (drawerHiScore && typeof app !== 'undefined' && app) {
+        let hi = (typeof app.highScore !== 'undefined') ? app.highScore : ((typeof app.hiScore !== 'undefined') ? app.hiScore : 0);
+        let scoreStr = '' + hi;
+        while (scoreStr.length < 5) {
+            scoreStr = '0' + scoreStr;
+        }
+        drawerHiScore.textContent = scoreStr;
+    }
+    if (drawerHiLevel && typeof app !== 'undefined' && app) {
+        let lvl = (typeof app.highScoreLevel !== 'undefined') ? app.highScoreLevel : ((typeof app.hiScoreLevel !== 'undefined') ? app.hiScoreLevel : 1);
+        drawerHiLevel.textContent = 'LEVEL ' + (lvl < 10 ? '0' : '') + lvl;
     }
 }
 

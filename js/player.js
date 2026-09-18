@@ -20,7 +20,7 @@ class Player {
         this.lives = 3;
         let startLvl = (typeof startingLevel === 'number' && startingLevel >= 1) ? startingLevel : 1;
         this.wavesCompleted = startLvl - 1;
-        this.waveTop = Math.min(260, 100 + (this.wavesCompleted * 20));
+        this.waveTop = Math.min(240, 100 + (this.wavesCompleted * 20));
         this.bombDropOdds = Math.max(500, 4000 - (this.wavesCompleted * 500));
         this.invaders = null;
         this.bonusAwarded = false;

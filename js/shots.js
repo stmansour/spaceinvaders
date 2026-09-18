@@ -117,6 +117,10 @@ class Shots {
     score(pts) {
         let player = app.players[app.currentPlayer];
         player.score += pts;
+        let currentLvl = (player.wavesCompleted || 0) + 1;
+        if (typeof app.checkHighScore === 'function') {
+            app.checkHighScore(player.score, currentLvl);
+        }
 
         // One-time bonus life awarded at BONUS_LIFE_SCORE points
         let bonusThreshold = (typeof BONUS_LIFE_SCORE !== 'undefined') ? BONUS_LIFE_SCORE : 5000;

@@ -138,20 +138,37 @@ The alien army drops 3 distinct types of bombs (identified in the original Taito
 
 ---
 
-## 5. Cosmic Battlegrounds & Environmental Theaters (Levels 1 – 8)
+## 5. Cosmic Battlegrounds & Environmental Theaters (Levels 1 – 11)
 
-Each wave progression transitions dynamically to an increasingly hostile planetary or deep-space theater with distinct drop dynamics and visual environments:
+Each wave progression transitions dynamically to an increasingly hostile planetary or deep-space theater with distinct drop dynamics, custom backdrop opacities, and visual environments:
 
 | Level | Theater Designation | Asset File | Tactical Dynamics & Environment |
 |:---:|:---|:---|:---|
-| **01** | **Lunar Orbit** | `assets/bg_moon.jpg` | Standard drop altitude, introductory wave pacing. |
+| **01** | **Lunar Orbit** | `assets/bg_moon.jpg` | Baseline altitude (`waveTop = 100`), introductory wave pacing. |
 | **02** | **Stellar Nebula** | `assets/bg_nebula.jpg` | Rapid-fire alien bomb dropping against vibrant interstellar gas. |
-| **03** | **Ringed Colossus** | `assets/bg_ringed_planet.jpg` | +1 Drop row; alien formation begins lower down the screen. |
-| **04** | **Supernova Nebula** | `assets/bg_supernova.jpg` | High-velocity targeted salvos amidst glowing emerald and golden cosmic dust pillars. |
+| **03** | **Ringed Colossus** | `assets/bg_ringed_planet.jpg` | +1 Drop row; alien formation begins lower down the screen (`waveTop = 140`). |
+| **04** | **Supernova Remnant** | `assets/bg_supernova.jpg` | High-velocity targeted salvos amidst golden-emerald cosmic pillars (calibrated 70% opacity). |
 | **05** | **Spiral Galaxy** | `assets/bg_galaxy.jpg` | +2 Drop rows; compressed reaction times across the galactic disc. |
 | **06** | **Magnetic Pulsar** | `assets/bg_pulsar.jpg` | Heavy targeted bomb salvos timed to alien cadence. |
-| **07** | **Solar Eclipse** | `assets/bg_eclipse.jpg` | +3 Drop rows; lethal low-altitude approach. |
-| **08** | **Cosmic Singularity (Master Level)** | `assets/bg_singularity.jpg` | Event horizon; maximum alien aggression. True master tier. |
+| **07** | **Solar Eclipse** | `assets/bg_eclipse.jpg` | +3 Drop rows; lethal low-altitude approach (`waveTop = 220`). |
+| **08** | **Cosmic Singularity (Master Level)** | `assets/bg_singularity.jpg` | Event horizon; maximum alien aggression (`waveTop = 240`). |
+| **09** | **Quasar Relativistic Core** | `assets/bg_quasar.jpg` | Blinding relativistic particle jet. Clamped at maximum lethal spawn ceiling (`waveTop = 240`). |
+| **10** | **Hypernova Shockwave** | `assets/bg_hypernova.jpg` | Violet stellar explosion shell; hyper-accelerated bomb volleys. |
+| **11** | **The Cosmic Web (Grandmaster Tier)** | `assets/bg_cosmic_web.jpg` | Filamentary supercluster boundary; maximum arcade skill tier. |
+
+### Spawn Altitude Mathematics & The Physical Limit
+- **Screen & Entity Heights**:
+  - Playfield Canvas Height = `540 px`
+  - Laser Cannon Y = `448 px` (height: 16 px, baseline: 464 px)
+  - Bunker Tops = `396 px` (height: 32 px, bottom: 428 px)
+  - Alien Formation = 5 rows x 32 px + 32 px spacing = `192 px` total formation height.
+- **Uncapped Altitude Formula**: `waveTop = 100 + (level - 1) * 20`
+  - At **Level 8**: `waveTop = 240`. Bottom alien row is at `Y = 240 + 192 = 432 px`. This leaves exactly 16 px of clearance above the Laser Cannon (`448 px`).
+  - At **Level 9**: Uncapped `waveTop = 260`. Bottom alien row is at `Y = 260 + 192 = 452 px`. The bottom alien spawns **past the top edge of the Laser Cannon (448 px)**, causing instant collision and making it physically impossible to shoot the invaders before getting destroyed!
+  - At **Level 10**: Uncapped `waveTop = 280`. Formation spawns at `Y = 472 px`, below the cannon floor.
+- **Fairness & Authentic Arcade Ceiling**:
+  - In the original 1978 Space Invaders arcade ROM (Nishikado / Taito), the alien starting altitude stepped down each wave but stopped descending after wave 6 to prevent spawning on top of the player.
+  - In our modern engine, starting altitude is strictly clamped at `waveTop = Math.min(240, 100 + wavesCompleted * 20)`. Levels 9, 10, 11 and beyond inherit the ultimate lethal altitude (Y=240), preserving fair play, cannon clearance, and infinite replayability.
 
 ---
 
